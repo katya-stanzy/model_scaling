@@ -1,0 +1,268 @@
+'''
+In 3dSlicer:
+Load MRI last folder
+Load markers templateSave project and files in a new folder inside the individual, make sure to change the default folder for all files.
+In markup module, create two point lists: femur_head_r and femur_head_left
+
+For each, left and right accordingly, collect lms on femur heads circular outline, red and green slices:
+move slices to the level of the largest femur head radius (approximately near fovea)
+
+once finished, open phthon command line and follow instructions below
+'''
+
+with slicer.util.displayPythonShell():
+	slicer.util.pip_install('numpy')
+
+with slicer.util.displayPythonShell():
+	slicer.util.pip_install('pyransac3d')
+
+import pyransac3d as pyrsc
+import numpy as np
+
+# left femur
+left_sph = pyrsc.Sphere()
+left_fh = getNode('femur_head_left')
+left_fh = slicer.util.arrayFromMarkupsControlPoints(left_fh)
+left_center, left_radius, left_inliers = left_sph.fit(left_fh, thresh=0.4)
+## there might be error outputs - check it the centre eas actually calculated
+
+# right femur
+right_sph = pyrsc.Sphere()
+right_fh = getNode('femur_head_right')
+right_fh = slicer.util.arrayFromMarkupsControlPoints(right_fh)
+right_center, right_radius, right_inliers = right_sph.fit(right_fh, thresh=0.4)
+
+# create a new markups ladmark list 'lms'
+lms = getNode('lms')
+left_center_point = lms.AddControlPoint(left_center)
+lms.SetNthControlPointLabel(left_center_point, 'femur_l_center')
+right_center_point = lms.AddControlPoint(right_center)
+lms.SetNthControlPointLabel(right_center_point, 'femur_r_center')
+
+# place a number of lms on MRI (ASIS_l, ASIS_r, PSIS_l, PSIS_r)
+# re-load lms node
+lms = getNode('lms')
+lms_list = slicer.util.arrayFromMarkupsControlPoints(lms)
+asis_l = lms_list[lms.GetControlPointIndexByLabel('ASIS_l')]
+asis_r = lms_list[lms.GetControlPointIndexByLabel('ASIS_r')]
+pelvis_origin = np.mean((asis_l, asis_r), axis = 0)
+pelvis_origin_point = lms.AddControlPoint(vtk.vtkVector3d(pelvis_origin))
+lms.SetNthControlPointLabel(pelvis_origin_point, 'pelvis_origin')
+psis_l = lms_list[lms.GetControlPointIndexByLabel('PSIS_l')]
+psis_r = lms_list[lms.GetControlPointIndexByLabel('PSIS_r')]
+
+# define new normal for the red slice
+red_slice_new_normal = np.cross((pelvis_origin - psis_l), (pelvis_origin - psis_r))
+red_slice_new_normal = red_slice_new_normal/np.linalg.norm(red_slice_new_normal)
+
+# define function to reorient and locate a slice
+
+def setSlicePoseFromSliceNormalAndPosition(sliceNode, sliceNormal, slicePosition, defaultViewUpDirection=None, backupViewRightDirection=None):
+	## Fix up input directions
+	if defaultViewUpDirection is None:
+		defaultViewUpDirection = [0,0,1]
+	if backupViewRightDirection is None:
+		backupViewRightDirection = [-1,0,0]
+	if sliceNormal[1]>=0:
+		sliceNormalStandardized = sliceNormal
+	else:
+		sliceNormalStandardized = [-sliceNormal[0], -sliceNormal[1], -sliceNormal[2]]
+	## Compute slice axes
+	sliceNormalViewUpAngle = vtk.vtkMath.AngleBetweenVectors(sliceNormalStandardized, defaultViewUpDirection)
+	angleTooSmallThresholdRad = 0.25 # about 15 degrees
+	if sliceNormalViewUpAngle > angleTooSmallThresholdRad and sliceNormalViewUpAngle < vtk.vtkMath.Pi() - angleTooSmallThresholdRad:
+		viewUpDirection = defaultViewUpDirection
+		sliceAxisY = viewUpDirection
+		sliceAxisX = [0, 0, 0]
+		vtk.vtkMath.Cross(sliceAxisY, sliceNormalStandardized, sliceAxisX)
+	else:
+		sliceAxisX = backupViewRightDirection
+	## Set slice axes
+	sliceNode.SetSliceToRASByNTP(sliceNormalStandardized[0], sliceNormalStandardized[1], sliceNormalStandardized[2],
+		sliceAxisX[0], sliceAxisX[1], sliceAxisX[2],
+		slicePosition[0], slicePosition[1], slicePosition[2], 0)
+		
+# reorient red slice
+redSliceNode = getNode("vtkMRMLSliceNodeRed")
+setSlicePoseFromSliceNormalAndPosition(redSliceNode, red_slice_new_normal, np.mean((psis_l, psis_r, pelvis_origin), axis = 0)) ## red slice now shows PSIS_l, PSIS_r and pelvis_origin points
+greenSliceNode = getNode("vtkMRMLSliceNodeGreen")
+setSlicePoseFromSliceNormalAndPosition(greenSliceNode, np.array([0,-1,0]), np.mean((psis_l, psis_r, pelvis_origin), axis = 0)) ## green slice now crossects pelvis in the niddle
+''' 
+move red slice up so that it delimits iliac crest left and right, place ilium_l and ilium_r lms
+return red slice to default poisiton (panel above the slice, hange 'reformat' to 'axial')
+create a new lm markup, from orientation_template copy points that match those already in lms; change points position so that two lists are identical
+use module 'IGT' -> 'fiducial registration' to create new transform from the new list above to lms (warping)
+then move the template landmarks to the transform dependancy to check points fit to image approximately well
+if yes, return the template to the indipendent position, clone it
+rename the clone to 'orientation', move the clone to the transform dependentcy and harden the transform
+
+Superimposed landmarks should fit exactly.
+
+__Adjust location of projected landmarks, starting from the top:__
+gr_troch_as_l and gr_troch_as_r** -- greater trochanter anterosuperior -- defined as the anterior point on the smallest red crossection through the greater trochanter, roughly corresponds with the superior point of the greater trochanter anatomically; one needs to be careful to distinguish between the bone, fat and tendons
+gr_troch_lat_l and gr_troch_lat_r** -- greater trochanter lateral -- defined as the lateralmost point on the green slice through greater trochanter, it should lie posteriorly to the gr_troch_as point
+**NB position of trochanter points is likely to be influenced by the rotaion of the femur: watch the effects
+
+isch_tuber_l and isch_tuber_r -- ischial tuberosity -- defined as the posteriormost landmark on ischial tuberosity, on the green slice is marked as black endpoint of the bone
+
+pub_infer_c -- pubis inferior central -- inferiormost point of the pubic sympysis impriz on the central yellow slice (controlled by the red and green)
+
+isch_infer_l and isch_infer-r -- ischial [bone] inferior -- defined as infero-anteriormost point of the imprint of the ischio-pubic arch on the red slice (control on the green and yellow)
+
+## here, one needs to skip midshaft points as their position depends on the axis of the femur and therefore its inclination relative to slices
+
+knee_l_med and knee_r_med -- knee medial, defined as the medial-most point of femur medial epicondyle on the red slice; this point should be roughly inline with the lateral knee point and the center of the intercondylar fossa
+
+ankle_l_med and ankle_r_med -- medial malleolus on left and right tibias; defined as the most medially prominent point on tibial malleolus
+
+'''
+
+# Calculate and update central points for the knee and the ankle
+## note that knee needs two sets of points updated: the ones that will be in child and the ones that will be in parent frames
+
+lms = getNode('orientation')
+lms_list = slicer.util.arrayFromMarkupsControlPoints(lms)
+
+knee_l_lat = lms_list[lms.GetControlPointIndexByLabel('knee_l_lat')]
+knee_l_med = lms_list[lms.GetControlPointIndexByLabel('knee_l_med')]
+knee_l_center = lms.GetControlPointIndexByLabel('knee_l_center')
+knee_l_center_in_femur_l = lms.GetControlPointIndexByLabel('knee_l_center_in_femur_l')
+temp1 = np.mean((knee_l_lat, knee_l_med), axis = 0)
+lms.SetNthControlPointPosition(knee_l_center, temp1[0], temp1[1], temp1[2])
+lms.SetNthControlPointPosition(knee_l_center_in_femur_l, temp1[0], temp1[1], temp1[2])
+
+knee_r_lat = lms_list[lms.GetControlPointIndexByLabel('knee_r_lat')]
+knee_r_med = lms_list[lms.GetControlPointIndexByLabel('knee_r_med')]
+knee_r_center = lms.GetControlPointIndexByLabel('knee_r_center')
+knee_r_center_in_femur_r = lms.GetControlPointIndexByLabel('knee_r_center_in_femur_r')
+temp2 = np.mean((knee_r_lat, knee_r_med), axis = 0)
+lms.SetNthControlPointPosition(knee_r_center, temp2[0], temp2[1], temp2[2])
+lms.SetNthControlPointPosition(knee_r_center_in_femur_r, temp2[0], temp2[1], temp2[2])
+
+ankle_l_lat = lms_list[lms.GetControlPointIndexByLabel('ankle_l_lat')]
+ankle_l_med = lms_list[lms.GetControlPointIndexByLabel('ankle_l_med')]
+ankle_l_center = lms.GetControlPointIndexByLabel('ankle_l_center')
+temp3 = np.mean((ankle_l_lat, ankle_l_med), axis = 0)
+lms.SetNthControlPointPosition(ankle_l_center, temp3[0], temp3[1], temp3[2])
+
+ankle_r_lat = lms_list[lms.GetControlPointIndexByLabel('ankle_r_lat')]
+ankle_r_med = lms_list[lms.GetControlPointIndexByLabel('ankle_r_med')]
+ankle_r_center = lms.GetControlPointIndexByLabel('ankle_r_center')
+temp4 = np.mean((ankle_r_lat, ankle_r_med), axis = 0)
+lms.SetNthControlPointPosition(ankle_r_center, temp4[0], temp4[1], temp4[2])
+
+# Locate tibia lat and med points
+# First, calculate tibial axes
+lms = getNode('orientation')
+lms_list = slicer.util.arrayFromMarkupsControlPoints(lms)
+
+knee_l_center = lms_list[lms.GetControlPointIndexByLabel('knee_l_center')]
+knee_r_center = lms_list[lms.GetControlPointIndexByLabel('knee_r_center')]
+
+ankle_l_center = lms_list[lms.GetControlPointIndexByLabel('ankle_l_center')]
+ankle_r_center = lms_list[lms.GetControlPointIndexByLabel('ankle_r_center')]
+
+tibia_l_normal = (knee_l_center-ankle_l_center)/np.linalg.norm(knee_l_center-ankle_l_center)
+tibia_r_normal = (knee_r_center-ankle_r_center)/np.linalg.norm(knee_r_center-ankle_r_center)
+ 
+# Reorient red slice perpendicular to ankle-knee axis and mark lateral and medial-most points on the tibial plaeau
+## Left
+redSliceNode = getNode("vtkMRMLSliceNodeRed")
+setSlicePoseFromSliceNormalAndPosition(redSliceNode, tibia_l_normal, knee_l_center)
+## Move red slice to intersect with the uppermost part of tibial plateau 
+## place lat med and central points across the longest axis with the central point roughly under the lateral intercondylar tubercle
+
+##Right
+redSliceNode = getNode("vtkMRMLSliceNodeRed")
+setSlicePoseFromSliceNormalAndPosition(redSliceNode, tibia_r_normal, knee_r_center)
+## Move red slice to intersect with the uppermost part of tibial plateau 
+## place lat med and central points across the longest axis with the central point roughly under the lateral intercondylar tubercle
+
+# Locate midshaft points
+## Left tibia
+fibula_l_midshaft_anter = lms.GetControlPointIndexByLabel('fibula_l_midshaft_anter')
+tibia_l_midshaft_anter = lms.GetControlPointIndexByLabel('tibia_l_midshaft_anter')
+tibia_l_midshaft_poster = lms.GetControlPointIndexByLabel('tibia_l_midshaft_poster')
+tibia_l_mean = np.mean((knee_l_center,ankle_l_center), axis=0)
+
+### the next step will locate midshaft landmars APPROXIMATELY in the middle of diaphisis
+lms.SetNthControlPointPosition(fibula_l_midshaft_anter, lms_list[fibula_l_midshaft_anter][0], lms_list[fibula_l_midshaft_anter][1], tibia_l_mean[2])
+lms.SetNthControlPointPosition(tibia_l_midshaft_anter, lms_list[tibia_l_midshaft_anter][0], lms_list[tibia_l_midshaft_anter][1], tibia_l_mean[2])
+lms.SetNthControlPointPosition(tibia_l_midshaft_poster, lms_list[tibia_l_midshaft_poster][0], lms_list[tibia_l_midshaft_poster][1], tibia_l_mean[2])
+
+### adjust landmarks position to fit on this slice:
+setSlicePoseFromSliceNormalAndPosition(redSliceNode, tibia_l_normal, tibia_l_mean)
+
+## Right tibia
+fibula_r_midshaft_anter = lms.GetControlPointIndexByLabel('fibula_r_midshaft_anter')
+tibia_r_midshaft_anter = lms.GetControlPointIndexByLabel('tibia_r_midshaft_anter')
+tibia_r_midshaft_poster = lms.GetControlPointIndexByLabel('tibia_r_midshaft_poster')
+tibia_r_mean = np.mean((knee_r_center,ankle_r_center), axis=0)
+
+### the next step will locate midshaft landmars APPROXIMATELY in the middle of diaphisis
+lms.SetNthControlPointPosition(fibula_r_midshaft_anter, lms_list[fibula_r_midshaft_anter][0], lms_list[fibula_r_midshaft_anter][1], tibia_r_mean[2])
+lms.SetNthControlPointPosition(tibia_r_midshaft_anter, lms_list[tibia_r_midshaft_anter][0], lms_list[tibia_r_midshaft_anter][1], tibia_r_mean[2])
+lms.SetNthControlPointPosition(tibia_r_midshaft_poster, lms_list[tibia_r_midshaft_poster][0], lms_list[tibia_r_midshaft_poster][1], tibia_r_mean[2])
+
+### adjust landmarks position to fit on this slice:
+setSlicePoseFromSliceNormalAndPosition(redSliceNode, tibia_r_normal, tibia_r_mean)
+
+## Left femur
+lms = getNode('orientation')
+lms_list = slicer.util.arrayFromMarkupsControlPoints(lms)
+
+knee_l_center_coords = lms_list[lms.GetControlPointIndexByLabel('knee_l_center')]
+femur_l_center_coords = lms_list[lms.GetControlPointIndexByLabel('femur_l_center')]
+femur_l_mean = np.mean((knee_l_center_coords, femur_l_center_coords), axis = 0)
+
+femur_l_midshaft_anter = lms.GetControlPointIndexByLabel('femur_l_midshaft_anter')
+lms.SetNthControlPointPosition(femur_l_midshaft_anter, lms_list[femur_l_midshaft_anter][0], lms_list[femur_l_midshaft_anter][1], femur_l_mean[2])
+
+femur_l_midshaft_poster = lms.GetControlPointIndexByLabel('femur_l_midshaft_poster')
+lms.SetNthControlPointPosition(femur_l_midshaft_poster, lms_list[femur_l_midshaft_poster][0], lms_list[femur_l_midshaft_poster][1], femur_l_mean[2])
+
+### adjust landmarks position to fit on this slice:
+femur_l_normal = (femur_l_center_coords-knee_l_center_coords)/np.linalg.norm(femur_l_center_coords - knee_l_center_coords)
+setSlicePoseFromSliceNormalAndPosition(redSliceNode, femur_l_normal, femur_l_mean)
+
+## Right femur
+lms = getNode('orientation')
+lms_list = slicer.util.arrayFromMarkupsControlPoints(lms)
+
+knee_r_center_coords = lms_list[lms.GetControlPointIndexByLabel('knee_r_center')]
+femur_r_center_coords = lms_list[lms.GetControlPointIndexByLabel('femur_r_center')]
+femur_r_mean = np.mean((knee_r_center_coords, femur_r_center_coords), axis = 0)
+
+femur_r_midshaft_anter = lms.GetControlPointIndexByLabel('femur_r_midshaft_anter')
+lms.SetNthControlPointPosition(femur_r_midshaft_anter, lms_list[femur_r_midshaft_anter][0], lms_list[femur_r_midshaft_anter][1], femur_r_mean[2])
+
+femur_r_midshaft_poster = lms.GetControlPointIndexByLabel('femur_r_midshaft_poster')
+lms.SetNthControlPointPosition(femur_r_midshaft_poster, lms_list[femur_r_midshaft_poster][0], lms_list[femur_r_midshaft_poster][1], femur_r_mean[2])
+
+### adjust landmarks position to fit on this slice:
+femur_r_normal = (femur_r_center_coords-knee_r_center_coords)/np.linalg.norm(femur_r_center_coords - knee_r_center_coords)
+setSlicePoseFromSliceNormalAndPosition(redSliceNode, femur_r_normal, femur_r_mean)
+
+### return red slice to normal orientation
+setSlicePoseFromSliceNormalAndPosition(redSliceNode, np.array([0,0,1]), femur_r_mean)
+
+# Update location of joints in parent frames that were previousely omitted -- these should have been projected into the correct location anyway but just to make sure
+lms = getNode('orientation')
+lms_list = slicer.util.arrayFromMarkupsControlPoints(lms)
+
+pelvis_origin_in_ground_index = lms.GetControlPointIndexByLabel('pelvis_origin_in_ground')
+pelvis_origin_coords = lms_list[lms.GetControlPointIndexByLabel('pelvis_origin')]
+lms.SetNthControlPointPosition(pelvis_origin_in_ground_index, pelvis_origin_coords[0], pelvis_origin_coords[1], pelvis_origin_coords[2])
+
+femur_l_center_coords = lms_list[lms.GetControlPointIndexByLabel('femur_l_center')]
+femur_l_center_in_pelvis_index = lms.GetControlPointIndexByLabel('femur_l_center_in_pelvis')
+lms.SetNthControlPointPosition(femur_l_center_in_pelvis_index, femur_l_center_coords[0], femur_l_center_coords[1], femur_l_center_coords[2])
+
+femur_r_center_coords = lms_list[lms.GetControlPointIndexByLabel('femur_r_center')]
+femur_r_center_in_pelvis_index = lms.GetControlPointIndexByLabel('femur_r_center_in_pelvis')
+lms.SetNthControlPointPosition(femur_r_center_in_pelvis_index, femur_r_center_coords[0], femur_r_center_coords[1], femur_r_center_coords[2])
+
+
+'''
+Finally -- adjust location of landmarks
+patella_ and patella_l_in_femur_l -- the same position at the lowest point of the left patella
