@@ -1503,7 +1503,7 @@
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
 								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
-								<visible>false</visible>
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -4391,7 +4391,7 @@
 									<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame in which this path point is defined.).-->
 									<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
 									<!--The fixed location of the path point expressed in its parent frame.-->
-									<location>0.016400000000000001 -0.376 0.0112</location>
+									<location>0.011629184835990141 -0.376 0.0112</location>
 								</PathPoint>
 								<PathPoint name="edl_r-P3">
 									<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame in which this path point is defined.).-->
@@ -13011,13 +13011,13 @@
 					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
 					<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
 					<!--The fixed location of the station expressed in its parent frame.-->
-					<location>-0.0029357400000000001 -0.034084799999999998 -0.00358976</location>
+					<location>-0.0029357399999999992 -0.034084799999999915 -0.0035897599999999835</location>
 				</Marker>
 				<Marker name="tibia_r_center">
 					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
 					<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
 					<!--The fixed location of the station expressed in its parent frame.-->
-					<location>-0.0029357400000000001 -0.034084799999999998 0.00358976</location>
+					<location>-0.0029357399999999992 -0.03408479999999986 0.0035897599999999696</location>
 				</Marker>
 				<Marker name="pelvis_origin_in_ground">
 					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
@@ -13258,6 +13258,78 @@
 					<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
 					<!--The fixed location of the station expressed in its parent frame.-->
 					<location>-0.0055851578999916874 -0.06258271901253859 -0.019747573324272821</location>
+				</Marker>
+				<Marker name="fibula_r_sup">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>-0.021723540000000006 -0.042084799999999895 0.029005259999999922</location>
+				</Marker>
+				<Marker name="fibula_l_sup">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>-0.021723540000000006 -0.042084799999999922 -0.029005259999999977</location>
+				</Marker>
+				<Marker name="tibia_r_epiph_yellow_posteriormost">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>-0.027556540000000011 -0.036084799999999972 0.0035897599999999974</location>
+				</Marker>
+				<Marker name="tibia_r_epiph_yellow_anterior_plate">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>0.016559491916787308 -0.02629171928745011 0.0035897599999999974</location>
+				</Marker>
+				<Marker name="tibia_r_epiph_yellow_patel_tend_point">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>0.02427646 -0.057084799999999936 0.0035897599999999974</location>
+				</Marker>
+				<Marker name="tibia_r_epiph_green_medial_lower_epiph">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>-0.0029357399999999992 -0.059084799999999937 -0.01599474</location>
+				</Marker>
+				<Marker name="tibia_l_epiph_yellow_posteriormost">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>-0.027556540000000011 -0.036084799999999972 -0.0035897599999999974</location>
+				</Marker>
+				<Marker name="tibia_l_epiph_yellow_anterior_plate">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>0.016559459999999998 -0.026291800000000032 -0.0035897599999999974</location>
+				</Marker>
+				<Marker name="tibia_l_epiph_yellow_patel_tend_point">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>0.02427646 -0.057084799999999936 -0.0035897599999999974</location>
+				</Marker>
+				<Marker name="tibia_l_epiph_green_medial_lower_epiph">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>-0.0029357399999999992 -0.059084799999999937 0.01599474</location>
+				</Marker>
+				<Marker name="tibia_r_ankle_yellow_anter">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>0.014575859999999996 -0.37304839999999984 0.0035897599999999974</location>
+				</Marker>
+				<Marker name="tibia_l_ankle_yellow_anter">
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>0.014575859999999996 -0.37304839999999984 -0.0035897599999999974</location>
 				</Marker>
 			</objects>
 			<groups />
