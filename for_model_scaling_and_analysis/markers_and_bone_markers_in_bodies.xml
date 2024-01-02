@@ -626,13 +626,13 @@
 				<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
 				<socket_parent_frame>/bodyset/patella_r</socket_parent_frame>
 				<!--The fixed location of the station expressed in its parent frame.-->
-				<location>0.00052243209292010193 0.052422511731483656 -0.00065055678388807603</location>
+				<location>0.0012784416124654238 0.052162227385192605 0.0014405990368003413</location>
 			</Marker>
 			<Marker name="patella_sup_l">
 				<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
 				<socket_parent_frame>/bodyset/patella_l</socket_parent_frame>
 				<!--The fixed location of the station expressed in its parent frame.-->
-				<location>0.0012784562515344485 0.052162704900557022 -0.0014406383083633012</location>
+				<location>0.0012784562515344468 0.052162704900557022 -0.0014406383083633151</location>
 			</Marker>
 			<Marker name="patella_lat_r">
 				<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
@@ -690,7 +690,7 @@
 				<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
 				<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
 				<!--The fixed location of the station expressed in its parent frame.-->
-				<location>-0.010000000000000014 -0.3999999999999998 -6.1409211049578956e-18</location>
+				<location>-0.010000000000000016 -0.3999999999999993 4.163336342344337e-17</location>
 				<!--Flag (true or false) specifying whether the marker is fixed in its parent frame during the marker placement step of scaling.  If false, the marker is free to move within its parent Frame to match its experimental counterpart.-->
 				<fixed>true</fixed>
 			</Marker>
@@ -827,6 +827,30 @@
 				<socket_parent_frame>/bodyset/pelvis</socket_parent_frame>
 				<!--The fixed location of the station expressed in its parent frame.-->
 				<location>-0.1007 0.081500000000000017 0</location>
+			</Marker>
+			<Marker name="fibula_r_lat_malleol_tip">
+				<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+				<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
+				<!--The fixed location of the station expressed in its parent frame.-->
+				<location>-0.01769326699855641 -0.40608577708299892 0.022006059130247835</location>
+			</Marker>
+			<Marker name="fibula_l_lat_malleol_tip">
+				<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+				<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
+				<!--The fixed location of the station expressed in its parent frame.-->
+				<location>-0.01769326699855641 -0.40608577708299892 -0.022006059130247835</location>
+			</Marker>
+			<Marker name="tibia_r_med_malleol_tip">
+				<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+				<socket_parent_frame>/bodyset/tibia_r</socket_parent_frame>
+				<!--The fixed location of the station expressed in its parent frame.-->
+				<location>-0.0016931958381035186 -0.39390464529179198 -0.02199360167691853</location>
+			</Marker>
+			<Marker name="tibia_l_med_malleol_tip">
+				<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+				<socket_parent_frame>/bodyset/tibia_l</socket_parent_frame>
+				<!--The fixed location of the station expressed in its parent frame.-->
+				<location>-0.0016931958381035186 -0.39390464529179198 0.02199360167691853</location>
 			</Marker>
 		</objects>
 		<groups />
